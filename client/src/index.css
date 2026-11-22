@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+/* Design tokens. Dark is the default; the theme switch only changes data-theme on <html>. */
+:root {
+  --bg-app: #0b1416;
+  --bg-card: #0e1113;
+  --bg-hover: #1a282d;
+  --bg-input: #2a3236;
+  --border: #2a3236;
+  --text-primary: #eaeff1;
+  --text-secondary: #8ba2ad;
+  --text-link: #648efc;
+  --brand-orange: #ff4500;
+  --downvote: #7193ff;
+  --button-blue: #0045ac;
+  --danger: #ea0027;
+}
+
+[data-theme='light'] {
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #f6f7f8;
+  --bg-input: #f6f7f8;
+  --border: #edeff1;
+  --text-primary: #1c1c1c;
+  --text-secondary: #576f76;
+  --text-link: #0045ac;
+}
+
+/* Maps the tokens to Tailwind utilities: bg-app, bg-card, bg-hover, bg-input,
+   border-line, text-ink, text-muted, text-link, bg-brand, text-down, bg-btn, text-danger. */
+@theme inline {
+  --color-app: var(--bg-app);
+  --color-card: var(--bg-card);
+  --color-hover: var(--bg-hover);
+  --color-input: var(--bg-input);
+  --color-line: var(--border);
+  --color-ink: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-link: var(--text-link);
+  --color-brand: var(--brand-orange);
+  --color-down: var(--downvote);
+  --color-btn: var(--button-blue);
+  --color-danger: var(--danger);
+  --font-sans: 'Noto Sans', system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: 'Noto Sans', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+button,
+a {
+  transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+
+/* Titles and text blocks follow their own language direction (Arabic renders right-aligned). */
+.rtl-aware {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+.skeleton {
+  background: var(--bg-hover);
+  border-radius: 8px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Light mode keeps the light colour scheme for native controls (scrollbars, inputs). */
+[data-theme='light'] {
+  color-scheme: light;
+}
+[data-theme='dark'] {
+  color-scheme: dark;
+}

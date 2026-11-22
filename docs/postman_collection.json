@@ -1,0 +1,1359 @@
+{
+  "info": {
+    "name": "Reddit Clone API",
+    "description": "Log in first (Auth > POST /auth/login). Postman stores the access_token cookie and sends it automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "description": "Health check",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/register",
+          "request": {
+            "method": "POST",
+            "description": "Create an account and sign in",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"new@user.com\",\n  \"username\": \"new_user\",\n  \"password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /auth/login",
+          "request": {
+            "method": "POST",
+            "description": "Sign in with email or username",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tasneem\",\n  \"password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "description": "Clear the auth cookie",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me",
+          "request": {
+            "method": "GET",
+            "description": "Current user",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /auth/username-available",
+          "request": {
+            "method": "GET",
+            "description": "Live username availability check",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/username-available",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "username-available"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "PATCH /users/me",
+          "request": {
+            "method": "PATCH",
+            "description": "Edit my profile",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Tasneem\",\n  \"bio\": \"CS student\",\n  \"avatarUrl\": \"https://picsum.photos/200\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /users/me/communities",
+          "request": {
+            "method": "GET",
+            "description": "Communities I joined",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/communities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "communities"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /users/{username}",
+          "request": {
+            "method": "GET",
+            "description": "Public profile (avatar, bio, karma, cake day)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:username",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":username"
+              ],
+              "variable": [
+                {
+                  "key": "username",
+                  "value": "<username>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /users/{username}/posts",
+          "request": {
+            "method": "GET",
+            "description": "Posts by a user (cursor pagination)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:username/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":username",
+                "posts"
+              ],
+              "variable": [
+                {
+                  "key": "username",
+                  "value": "<username>"
+                }
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "range",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /users/{username}/comments",
+          "request": {
+            "method": "GET",
+            "description": "Comments by a user",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:username/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":username",
+                "comments"
+              ],
+              "variable": [
+                {
+                  "key": "username",
+                  "value": "<username>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Communities",
+      "item": [
+        {
+          "name": "GET /communities",
+          "request": {
+            "method": "GET",
+            "description": "List / popular communities",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /communities",
+          "request": {
+            "method": "POST",
+            "description": "Create a community (creator becomes moderator)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/communities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"webdev\",\n  \"description\": \"All about web development\",\n  \"iconUrl\": \"https://picsum.photos/100\",\n  \"bannerUrl\": \"https://picsum.photos/1200/200\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /communities/{name}",
+          "request": {
+            "method": "GET",
+            "description": "Community page data (members, moderators, isMember)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "POST /communities/{name}/membership",
+          "request": {
+            "method": "POST",
+            "description": "Join (idempotent)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name/membership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name",
+                "membership"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "DELETE /communities/{name}/membership",
+          "request": {
+            "method": "DELETE",
+            "description": "Leave (moderators cannot leave)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name/membership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name",
+                "membership"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "GET /communities/{name}/posts",
+          "request": {
+            "method": "GET",
+            "description": "Posts of a community (cursor pagination, sorting)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name",
+                "posts"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "range",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /communities/{name}/posts",
+          "request": {
+            "method": "POST",
+            "description": "Create a post: title plus any mix of text (markdown), media and a link. The type is derived.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name",
+                "posts"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My desk\",\n  \"body\": \"Check **this** out\",\n  \"mediaUrls\": [\n    \"/uploads/3f2c9a1e-7b1d-4c55-9a52-2a0f5d1c1e11.png\"\n  ],\n  \"linkUrl\": \"https://example.com\",\n  \"tags\": [\n    \"spoiler\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /posts/{id}",
+          "request": {
+            "method": "GET",
+            "description": "Get a post",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "PATCH /posts/{id}",
+          "request": {
+            "method": "PATCH",
+            "description": "Edit post body and/or media (author only; link posts: body only)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Updated text\",\n  \"mediaUrls\": [\n    \"/uploads/3f2c9a1e-7b1d-4c55-9a52-2a0f5d1c1e11.png\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /posts/{id}",
+          "request": {
+            "method": "DELETE",
+            "description": "Delete a post (author or community moderator)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feed",
+      "item": [
+        {
+          "name": "GET /posts",
+          "request": {
+            "method": "GET",
+            "description": "Popular posts",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "range",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /feed",
+          "request": {
+            "method": "GET",
+            "description": "Posts from joined communities (Popular when logged out or nothing joined)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/feed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "feed"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "range",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Voting",
+      "item": [
+        {
+          "name": "PUT /posts/{id}/vote",
+          "request": {
+            "method": "PUT",
+            "description": "Set my vote (+1, -1, or 0 to remove). Idempotent and atomic.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/vote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "vote"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "GET /posts/{id}/comments",
+          "request": {
+            "method": "GET",
+            "description": "Flat list with parentId (client builds the tree)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "comments"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /posts/{id}/comments",
+          "request": {
+            "method": "POST",
+            "description": "Add a top-level comment",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "comments"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Nice post!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /comments/{id}/replies",
+          "request": {
+            "method": "POST",
+            "description": "Reply to a comment (unlimited nesting)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/:id/replies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                ":id",
+                "replies"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"I agree\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH /comments/{id}",
+          "request": {
+            "method": "PATCH",
+            "description": "Edit a comment (author only)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Edited\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /comments/{id}",
+          "request": {
+            "method": "DELETE",
+            "description": "Delete a comment (author or moderator). Keeps \"[deleted]\" when it has replies.",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "POST /posts/{id}/summarize",
+          "request": {
+            "method": "POST",
+            "description": "AI summary of the post (cached, rate limited 5/min; mock when no API key)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/summarize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "summarize"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "POST /uploads",
+          "request": {
+            "method": "POST",
+            "description": "Upload images/videos (multipart/form-data, field \"files\", max 10 files; images up to 10 MB, videos up to 50 MB)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "uploads"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Social",
+      "item": [
+        {
+          "name": "GET /users/me/suggestions",
+          "request": {
+            "method": "GET",
+            "description": "People you may know (mutual follows + shared communities, newest members as filler)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/suggestions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "suggestions"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /users/me/following",
+          "request": {
+            "method": "GET",
+            "description": "People I follow",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/following",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "following"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /users/me/followers",
+          "request": {
+            "method": "GET",
+            "description": "People who follow me",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/followers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "followers"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "POST /users/{username}/follow",
+          "request": {
+            "method": "POST",
+            "description": "Follow a user (idempotent)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:username/follow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":username",
+                "follow"
+              ],
+              "variable": [
+                {
+                  "key": "username",
+                  "value": "<username>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "DELETE /users/{username}/follow",
+          "request": {
+            "method": "DELETE",
+            "description": "Unfollow a user",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/:username/follow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":username",
+                "follow"
+              ],
+              "variable": [
+                {
+                  "key": "username",
+                  "value": "<username>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "GET /chats",
+          "request": {
+            "method": "GET",
+            "description": "My chat threads with last message and unread count",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "POST /chats",
+          "request": {
+            "method": "POST",
+            "description": "Open (or create) a chat with 1-8 usernames. Several usernames make a group chat.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats"
+              ],
+              "variable": [],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernames\": [\n    \"omar_dev\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /chats/{id}/messages",
+          "request": {
+            "method": "GET",
+            "description": "Messages of a chat, oldest first. Use nextBefore as \"before\" to load older ones.",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats/:id/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                ":id",
+                "messages"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": [
+                {
+                  "key": "before",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /chats/{id}/messages",
+          "request": {
+            "method": "POST",
+            "description": "Send a message. Pushed live to all members over WebSocket (ws://host/ws, same auth cookie).",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chats/:id/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                ":id",
+                "messages"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hello!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /chats/{id}/read",
+          "request": {
+            "method": "POST",
+            "description": "Mark the chat as read for me",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats/:id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chats",
+                ":id",
+                "read"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "GET /search",
+          "request": {
+            "method": "GET",
+            "description": "Search communities or users",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "search"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
