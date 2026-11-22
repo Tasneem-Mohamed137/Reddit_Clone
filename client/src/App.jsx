@@ -4,8 +4,10 @@ import ChatPanel from './components/chat/ChatPanel';
 import AppLayout from './components/layout/AppLayout';
 import CommunityPage from './pages/CommunityPage';
 import CreateCommunityPage from './pages/CreateCommunityPage';
+import EditCommunityPage from './pages/EditCommunityPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
+import NotificationsPage from './pages/NotificationsPage';
 import PeoplePage from './pages/PeoplePage';
 import PopularPage from './pages/PopularPage';
 import PostPage from './pages/PostPage';
@@ -22,7 +24,9 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="popular" element={<PopularPage />} />
           <Route path="people" element={<PeoplePage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="r/:name" element={<CommunityPage />} />
+          <Route path="r/:name/edit" element={<EditCommunityPage />} />
           <Route path="r/:name/comments/:postId/:slug?" element={<PostPage />} />
           <Route path="user/:username" element={<ProfilePage />} />
           <Route path="submit" element={<SubmitPage />} />

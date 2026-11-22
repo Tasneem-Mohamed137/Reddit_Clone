@@ -15,9 +15,20 @@ export const communityRepo = {
       bannerUrl,
       creatorId,
       memberCount: 0,
+      rules: [],
       createdAt: new Date().toISOString(),
     };
     communities.push(community);
+    persist();
+    return community;
+  },
+
+  async update(id, patch) {
+    const community = getDb().communities.find((c) => c.id === id);
+    if (!community) return null;
+    for (const key of ['description', 'iconUrl', 'bannerUrl', 'rules']) {
+      if (patch[key] !== undefined) community[key] = patch[key];
+    }
     persist();
     return community;
   },
@@ -81,7 +92,7 @@ export const communityRepo = {
     const wanted = new Set(communityIds);
     return getDb().members.filter((m) => wanted.has(m.communityId));
   },
-  
+
   async listJoinedBy(userId) {
     const db = getDb();
     const ids = new Set(db.members.filter((m) => m.userId === userId).map((m) => m.communityId));

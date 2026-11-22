@@ -7,6 +7,9 @@ export const communityController = {
   async create(req, res) {
     res.status(201).json({ community: await communityService.create(req.userId, req.body) });
   },
+  async update(req, res) {
+    res.json({ community: await communityService.update(req.params.name, req.userId, req.body) });
+  },
   async get(req, res) {
     res.json({ community: await communityService.getByName(req.params.name, req.userId) });
   },

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, MessageSquare, Share2, X } from 'lucide-react';
+import { ExternalLink, MessageSquare, Pin, Share2, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useMembership } from '../../hooks/useMembership';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { formatCount, hostOf, isVideoUrl, postPath, timeAgo } from '../../utils/format';
+import { CommunityHover } from '../people/HoverCards';
 import Avatar from '../ui/Avatar';
 import Markdown from '../ui/Markdown';
 import PostMedia from './PostMedia';
@@ -29,7 +30,8 @@ function TagBadges({ tags }) {
   ));
 }
 
-export default function PostCard({ post, compact = false, canModerate = false, showJoin = true }) {
+// `active` is the post highlighted by the j/k keyboard shortcuts.
+export default function PostCard({ post, compact = false, canModerate = false, showJoin = true, active = false }) {
   const [hidden, setHidden] = useState(false);
   const toast = useToast();
   const requireAuth = useRequireAuth();
@@ -50,14 +52,19 @@ export default function PostCard({ post, compact = false, canModerate = false, s
   };
 
   return (
-    <article className="border-b border-line py-1">
+    <article id={`post-${post.id}`} className={`border-b border-line py-1 ${active ? 'rounded-2xl ring-2 ring-link' : ''}`}>
       <div className="rounded-2xl p-3 hover:bg-hover">
         <header className="flex items-center gap-2 text-xs text-muted">
-          <Link to={`/r/${post.community.name}`} className="flex items-center gap-2 font-medium text-ink hover:underline">
-            <Avatar name={post.community.name} src={post.community.iconUrl} size={24} />
-            r/{post.community.name}
-          </Link>
+          <CommunityHover name={post.community.name}>
+            <Link to={`/r/${post.community.name}`} className="flex items-center gap-2 font-medium text-ink hover:underline">
+              <Avatar name={post.community.name} src={post.community.iconUrl} size={24} />
+              r/{post.community.name}
+            </Link>
+          </CommunityHover>
           <span>• {timeAgo(post.createdAt)}</span>
+          {post.pinned && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-green-500"><Pin size={12} /> Pinned</span>
+          )}
           {showJoin && !post.isJoined && (
             <button onClick={join} disabled={membership.isPending} className="ml-1 h-7 rounded-full bg-btn px-3 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50">
               Join

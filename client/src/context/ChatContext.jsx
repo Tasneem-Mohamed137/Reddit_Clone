@@ -22,7 +22,8 @@ export function ChatProvider({ children }) {
   });
   const unreadTotal = (chats.data ?? []).reduce((sum, chat) => sum + chat.unreadCount, 0);
 
-  // One WebSocket per logged-in user. The server pushes new messages; everything else is plain REST.
+  // One WebSocket per logged-in user. The server pushes new chat messages and notification pings;
+  // everything else is plain REST.
   useEffect(() => {
     if (!user) {
       setOpen(false);
@@ -41,19 +42,24 @@ export function ChatProvider({ children }) {
 
       socket.onopen = () => {
         attempts = 0;
-        // After a reconnect we may have missed messages, so refetch instead of trusting the cache.
+        // After a reconnect we may have missed events, so refetch instead of trusting the cache.
         if (wasConnected) {
           queryClient.invalidateQueries({ queryKey: ['chats'] });
           queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
         }
         wasConnected = true;
       };
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type !== 'chat.message') return;
-        appendMessage(queryClient, data.message);
-        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        if (data.type === 'notification') {
+          // The bell badge and the notifications page refetch themselves.
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        } else if (data.type === 'chat.message') {
+          appendMessage(queryClient, data.message);
+          queryClient.invalidateQueries({ queryKey: ['chats'] });
+        }
       };
 
       // Reconnect with exponential backoff: 1s, 2s, 4s ... capped at 15s.

@@ -71,3 +71,23 @@ Records use string `id`s and ISO-8601 date strings. Return `null` when not found
 
 Also: userRepo.listExcluding(ids, limit), communityRepo.listMemberships(communityIds),
 postRepo.list({ ..., orAuthorIds })  (Mongo: { $or: [{ communityId: { $in } }, { authorId: { $in } }] }).
+
+
+## commentVotes (voteRepo, same atomic design as posts)
+- setCommentVote(userId, commentId, value in {1,-1,0}) -> { score, userVote } | null
+- getUserCommentVotes(userId, commentIds) -> { [commentId]: value }
+  Unique (userId, commentId). Removing a comment/post removes its votes.
+
+## userPostRepo (per-user post state)
+- setSaved(userId, postId, bool) / setHidden(userId, postId, bool)     unique (userId, postId) per list
+- listSavedIds(userId) / listHiddenIds(userId) / savedAmong(userId, postIds) -> string[]
+- report({ userId, postId, reason }) -> boolean (false if already reported) / listReportsFor(postIds)
+
+## notificationRepo
+- create({ userId, type, actorId, postId, commentId }) / listForUser(userId, limit) / countUnread(userId) / markAllRead(userId)
+
+## Additions to existing repos
+- postRepo.list({ ..., ids, excludeIds })     ids = only these posts (saved list), excludeIds = hidden/pinned
+- postRepo.search(q, limit) / listPinned(communityId) / countPinned(communityId) / setPinned(id, bool) / isMediaUsed(url)
+- commentRepo.sumScoreByAuthor(userId)        comment karma
+- communityRepo.update(id, { description, iconUrl, bannerUrl, rules })

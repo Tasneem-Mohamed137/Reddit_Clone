@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { communityController } from '../controllers/community.controller.js';
+import { postActionController } from '../controllers/postAction.controller.js';
 import { postController } from '../controllers/post.controller.js';
 import { socialController } from '../controllers/social.controller.js';
 import { userController } from '../controllers/user.controller.js';
@@ -13,6 +14,7 @@ export const userRouter = Router();
 
 // "/me/..." routes MUST be declared before "/:username", otherwise "me" is read as a username.
 userRouter.get('/me/communities', requireAuth, communityController.listJoined);
+userRouter.get('/me/saved', requireAuth, validate(feedQuerySchema, 'query'), postActionController.saved);
 userRouter.get('/me/suggestions', requireAuth, validate(suggestionsQuerySchema, 'query'), socialController.suggestions);
 userRouter.get('/me/following', requireAuth, socialController.following);
 userRouter.get('/me/followers', requireAuth, socialController.followers);

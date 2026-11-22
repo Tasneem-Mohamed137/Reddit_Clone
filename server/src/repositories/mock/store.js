@@ -9,9 +9,14 @@ const emptyDb = () => ({
   posts: [],
   comments: [],
   votes: [],
+  commentVotes: [],
   follows: [],
   chats: [],
   messages: [],
+  notifications: [],
+  saves: [],
+  hides: [],
+  reports: [],
 });
 
 let db = null;

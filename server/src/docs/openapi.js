@@ -75,6 +75,9 @@ export const openapi = {
         karma: { type: 'integer' },
         createdAt: { type: 'string', format: 'date-time' },
         email: { type: 'string', description: 'Only returned for the signed-in user' },
+        followerCount: { type: 'integer', description: 'Only on GET /users/{username}' },
+        followingCount: { type: 'integer', description: 'Only on GET /users/{username}' },
+        followsYou: { type: 'boolean', description: 'Only on GET /users/{username}: does this user follow the signed-in user' },
       }),
       Community: obj({
         id: { type: 'string' },
@@ -83,6 +86,8 @@ export const openapi = {
         iconUrl: { type: 'string', nullable: true },
         bannerUrl: { type: 'string', nullable: true },
         memberCount: { type: 'integer' },
+        rules: { type: 'array', items: obj({ title: { type: 'string' },
+        description: { type: 'string' } }) },
         createdAt: { type: 'string', format: 'date-time' },
         moderators: { type: 'array', items: ref('User'), description: 'Only on GET /communities/{name}' },
         isMember: { type: 'boolean', description: 'Only on GET /communities/{name}' },
@@ -100,6 +105,7 @@ export const openapi = {
         commentCount: { type: 'integer' },
         createdAt: { type: 'string', format: 'date-time' },
         edited: { type: 'boolean' },
+        pinned: { type: 'boolean' }, isSaved: { type: 'boolean' },
         community: obj({ id: { type: 'string' }, name: { type: 'string' }, iconUrl: { type: 'string', nullable: true } }),
         author: obj({ username: { type: 'string' }, displayName: { type: 'string' }, avatarUrl: { type: 'string', nullable: true } }),
         userVote: { type: 'integer', enum: [-1, 0, 1], description: 'The signed-in user\'s vote (0 when logged out)' },
@@ -114,6 +120,7 @@ export const openapi = {
         deleted: { type: 'boolean' },
         edited: { type: 'boolean' },
         createdAt: { type: 'string', format: 'date-time' },
+        score: { type: 'integer' }, userVote: { type: 'integer', enum: [-1, 0, 1] },
         author: { type: 'object', nullable: true, properties: { username: { type: 'string' }, displayName: { type: 'string' }, avatarUrl: { type: 'string', nullable: true } } },
       }),
       VoteResult: obj({ score: { type: 'integer', example: 12 }, userVote: { type: 'integer', enum: [-1, 0, 1] } }),
@@ -195,6 +202,11 @@ export const openapi = {
         tags: ['Communities'], summary: 'Community page data (members, moderators, isMember)',
         parameters: [pathParam('name')], responses: { 200: communityOut('OK'), 404: E.notFound },
       },
+     patch: {
+        tags: ['Communities', 'Moderation'], summary: 'Edit description, icon, banner and rules (moderators only)', security: AUTH, parameters: [pathParam('name')],
+        requestBody: reqBody({ description: 'New description', iconUrl: null, rules: [{ title: 'Be kind', description: 'No harassment.' }] }),
+        responses: { 200: communityOut('Updated'), 400: E.validation, 401: E.unauthorized, 403: E.forbidden, 404: E.notFound },
+      },
     },
     '/communities/{name}/membership': {
       post: {
@@ -223,14 +235,14 @@ export const openapi = {
     },
     '/feed': {
       get: {
-        tags: ['Feed'], summary: 'Posts from joined communities (Popular when logged out or nothing joined)',
+        tags: ['Feed'], summary: 'Following: posts from joined communities and followed people (Popular when logged out or nothing joined/followed)',
         parameters: FEED_PARAMS, responses: { 200: postPage('OK') },
       },
     },
     '/posts/{id}': {
       get: { tags: ['Posts'], summary: 'Get a post', parameters: [pathParam('id')], responses: { 200: postOut('OK'), 404: E.notFound } },
       patch: {
-        tags: ['Posts'], summary: 'Edit post body and/or media (author only; link posts: body only)', security: AUTH, parameters: [pathParam('id')],
+        tags: ['Posts'], summary: 'Edit post body (markdown) and/or media (author only)', security: AUTH, parameters: [pathParam('id')],
         requestBody: reqBody({ body: 'Updated text', mediaUrls: ['/uploads/3f2c9a1e-7b1d-4c55-9a52-2a0f5d1c1e11.png'] }),
         responses: { 200: postOut('Updated'), 400: E.validation, 401: E.unauthorized, 403: E.forbidden, 404: E.notFound },
       },
@@ -373,13 +385,76 @@ export const openapi = {
         responses: { 204: { description: 'Marked as read' }, 401: E.unauthorized, 404: E.notFound },
       },
     },
+    '/notifications': {
+      get: {
+        tags: ['Notifications'], summary: 'My notifications (comments on my posts, replies to my comments, new followers), newest first', security: AUTH,
+        responses: {
+          200: ok('OK', obj({
+            items: {
+              type: 'array',
+              items: obj({
+                id: { type: 'string' },
+                type: { type: 'string', enum: ['post_comment', 'comment_reply', 'follow'] },
+                read: { type: 'boolean' },
+                createdAt: { type: 'string', format: 'date-time' },
+                actor: personSchema,
+                post: { type: 'object', nullable: true, properties: { id: { type: 'string' }, title: { type: 'string' }, communityName: { type: 'string' } } },
+              }),
+            },
+            unreadCount: { type: 'integer' },
+          })),
+          401: E.unauthorized,
+        },
+      },
+    },
+    '/notifications/unread-count': {
+      get: { tags: ['Notifications'], summary: 'Unread counter for the bell', security: AUTH, responses: { 200: ok('OK', obj({ count: { type: 'integer' } })), 401: E.unauthorized } },
+    },
+    '/notifications/read-all': {
+      post: { tags: ['Notifications'], summary: 'Mark every notification as read', security: AUTH, responses: { 204: { description: 'Done' }, 401: E.unauthorized } },
+    },
+    '/comments/{id}/vote': {
+      put: {
+        tags: ['Voting'], summary: 'Set my vote on a comment (+1, -1, 0). Atomic and idempotent, same design as post votes.', security: AUTH, parameters: [pathParam('id')],
+        requestBody: reqBody({ value: 1 }),
+        responses: { 200: ok('New score and my vote', ref('VoteResult')), 400: err('VALIDATION_ERROR / COMMENT_DELETED'), 401: E.unauthorized, 404: E.notFound },
+      },
+    },
+    '/posts/{id}/save': {
+      put: { tags: ['Post actions'], summary: 'Save a post (idempotent)', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Saved', obj({ saved: { type: 'boolean' } })), 401: E.unauthorized, 404: E.notFound } },
+      delete: { tags: ['Post actions'], summary: 'Unsave a post', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Unsaved', obj({ saved: { type: 'boolean' } })), 401: E.unauthorized, 404: E.notFound } },
+    },
+    '/posts/{id}/hide': {
+      put: { tags: ['Post actions'], summary: 'Hide a post from my listings (idempotent)', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Hidden', obj({ hidden: { type: 'boolean' } })), 401: E.unauthorized, 404: E.notFound } },
+      delete: { tags: ['Post actions'], summary: 'Unhide a post', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Visible again', obj({ hidden: { type: 'boolean' } })), 401: E.unauthorized, 404: E.notFound } },
+    },
+    '/posts/{id}/report': {
+      post: {
+        tags: ['Post actions', 'Moderation'], summary: 'Report a post to the moderators (once per user)', security: AUTH, parameters: [pathParam('id')],
+        requestBody: reqBody({ reason: 'spam' }),
+        responses: { 200: ok('Reported', obj({ reported: { type: 'boolean' } })), 400: E.validation, 401: E.unauthorized, 404: E.notFound },
+      },
+    },
+    '/posts/{id}/pin': {
+      put: { tags: ['Moderation'], summary: 'Pin a post to the top of its community (moderators, max 2)', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Pinned', obj({ pinned: { type: 'boolean' } })), 400: err('TOO_MANY_PINNED'), 401: E.unauthorized, 403: E.forbidden, 404: E.notFound } },
+      delete: { tags: ['Moderation'], summary: 'Unpin a post (moderators)', security: AUTH, parameters: [pathParam('id')], responses: { 200: ok('Unpinned', obj({ pinned: { type: 'boolean' } })), 401: E.unauthorized, 403: E.forbidden, 404: E.notFound } },
+    },
+    '/users/me/saved': {
+      get: { tags: ['Post actions'], summary: 'My saved posts (cursor pagination)', security: AUTH, parameters: FEED_PARAMS, responses: { 200: postPage('OK'), 401: E.unauthorized } },
+    },
+    '/communities/{name}/reports': {
+      get: {
+        tags: ['Moderation'], summary: 'Moderator queue: reported posts of the community', security: AUTH, parameters: [pathParam('name')],
+        responses: { 200: ok('OK', obj({ items: { type: 'array', items: obj({ post: obj({ id: { type: 'string' }, title: { type: 'string' } }), reports: { type: 'array', items: obj({ reason: { type: 'string' }, createdAt: { type: 'string', format: 'date-time' } }) } }) } })), 401: E.unauthorized, 403: E.forbidden, 404: E.notFound },
+      },
+    },
 
     '/search': {
       get: {
-        tags: ['Search'], summary: 'Search communities or users',
+        tags: ['Search'], summary: 'Search communities, users or posts',
         parameters: [
           { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
-          queryParam('type', { type: 'string', enum: ['communities', 'users'], default: 'communities' }),
+          queryParam('type', { type: 'string', enum: ['communities', 'users', 'posts'], default: 'communities' }),
           queryParam('limit', { type: 'integer', default: 10 }),
         ],
         responses: { 200: { description: 'OK' }, 400: E.validation },

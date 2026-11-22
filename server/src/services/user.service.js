@@ -21,7 +21,7 @@ export const userService = {
   async getProfile(username, viewerId) {
     const user = await findUserOrThrow(username);
     const [karma, followerCount, followingCount, followsYou] = await Promise.all([
-      postRepo.sumScoreByAuthor(user.id),
+      Promise.all([postRepo.sumScoreByAuthor(user.id), commentRepo.sumScoreByAuthor(user.id)]).then(([posts, comments]) => posts + comments),
       followRepo.countFollowers(user.id),
       followRepo.countFollowing(user.id),
       viewerId ? followRepo.isFollowing(user.id, viewerId) : false,

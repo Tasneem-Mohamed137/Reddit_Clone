@@ -24,6 +24,7 @@ const SORT_KEYS = {
 };
 
 const EDITABLE_FIELDS = ['body', 'mediaUrls', 'type'];
+const newestFirst = (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt);
 
 export const postRepo = {
   async create({ communityId, authorId, type = 'text', title, body = '', mediaUrls = [], linkUrl = null, tags = [], createdAt }) {
@@ -38,6 +39,7 @@ export const postRepo = {
       mediaUrls,
       linkUrl,
       tags,
+      pinned: false,
       score: 0,
       commentCount: 0,
       createdAt: now,
@@ -70,12 +72,35 @@ export const postRepo = {
     return post;
   },
 
+  async setPinned(id, pinned) {
+    const post = getDb().posts.find((p) => p.id === id);
+    post.pinned = pinned;
+    persist();
+    return post;
+  },
+
+  async listPinned(communityId) {
+    return getDb().posts.filter((p) => p.communityId === communityId && p.pinned).sort(newestFirst);
+  },
+
+  async countPinned(communityId) {
+    return getDb().posts.filter((p) => p.communityId === communityId && p.pinned).length;
+  },
+
+  // True while some post still shows this uploaded file.
+  async isMediaUsed(url) {
+    return getDb().posts.some((p) => p.mediaUrls.includes(url));
+  },
+
   // Real DB: do this in one transaction.
   async deleteCascade(id) {
     const db = getDb();
+    const commentIds = new Set(db.comments.filter((c) => c.postId === id).map((c) => c.id));
     db.posts = db.posts.filter((p) => p.id !== id);
     db.comments = db.comments.filter((c) => c.postId !== id);
     db.votes = db.votes.filter((v) => v.postId !== id);
+    db.commentVotes = db.commentVotes.filter((v) => !commentIds.has(v.commentId));
+    for (const key of ['saves', 'hides', 'reports']) db[key] = db[key].filter((r) => r.postId !== id);
     persist();
   },
 
@@ -85,7 +110,15 @@ export const postRepo = {
       .reduce((sum, p) => sum + p.score, 0);
   },
 
-    async list({ communityIds, orAuthorIds, authorId, sort = 'hot', range = 'all', cursor, limit = 10 }) {
+  async search(q, limit = 20) {
+    const needle = q.toLowerCase();
+    return getDb()
+      .posts.filter((p) => p.title.toLowerCase().includes(needle) || p.body.toLowerCase().includes(needle))
+      .sort(newestFirst)
+      .slice(0, limit);
+  },
+
+  async list({ communityIds, orAuthorIds, authorId, ids, excludeIds, sort = 'hot', range = 'all', cursor, limit = 10 }) {
     let posts = getDb().posts;
     // communityIds and orAuthorIds combine with OR: "from my communities OR written by people I follow".
     if (communityIds || orAuthorIds) {
@@ -94,6 +127,14 @@ export const postRepo = {
       posts = posts.filter((p) => inCommunities.has(p.communityId) || byAuthors.has(p.authorId));
     }
     if (authorId) posts = posts.filter((p) => p.authorId === authorId);
+    if (ids) {
+      const wanted = new Set(ids);
+      posts = posts.filter((p) => wanted.has(p.id));
+    }
+    if (excludeIds?.length) {
+      const skipped = new Set(excludeIds);
+      posts = posts.filter((p) => !skipped.has(p.id));
+    }
     if (sort === 'top' && range !== 'all') {
       const since = Date.now() - RANGE_MS[range];
       posts = posts.filter((p) => Date.parse(p.createdAt) >= since);

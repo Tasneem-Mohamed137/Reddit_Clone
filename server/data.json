@@ -245,7 +245,7 @@
       "mediaUrls": [],
       "linkUrl": null,
       "score": 0,
-      "commentCount": 0,
+      "commentCount": 2,
       "createdAt": "2026-11-22T02:28:06.305Z",
       "updatedAt": "2026-11-22T02:28:06.305Z"
     },
@@ -650,6 +650,28 @@
       "score": 0,
       "createdAt": "2026-11-22T10:58:06.305Z",
       "editedAt": null
+    },
+    {
+      "id": "38fff10d-388b-441e-b545-4ce01e314a78",
+      "postId": "0bff03cf-d7ba-415a-b5a8-8692b81af1bc",
+      "parentId": null,
+      "authorId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "body": "***Sleeping***🙄🙄",
+      "deleted": false,
+      "score": 2,
+      "createdAt": "2026-11-22T17:46:12.181Z",
+      "editedAt": "2026-11-22T17:46:36.145Z"
+    },
+    {
+      "id": "7ac609fa-454f-45b2-a63e-0f76df1c58a3",
+      "postId": "0bff03cf-d7ba-415a-b5a8-8692b81af1bc",
+      "parentId": "38fff10d-388b-441e-b545-4ce01e314a78",
+      "authorId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "body": "Cool",
+      "deleted": false,
+      "score": 0,
+      "createdAt": "2026-11-22T17:47:12.625Z",
+      "editedAt": null
     }
   ],
   "votes": [
@@ -722,18 +744,18 @@
     },
     {
       "followerId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
-      "followeeId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
-      "createdAt": "2026-11-22T11:30:14.704Z"
-    },
-    {
-      "followerId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
       "followeeId": "2db4e5da-dd64-432e-992f-ee37df6e807b",
       "createdAt": "2026-11-22T11:30:19.547Z"
     },
     {
+      "followerId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "followeeId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "createdAt": "2026-11-22T17:44:45.804Z"
+    },
+    {
       "followerId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
       "followeeId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
-      "createdAt": "2026-11-22T11:34:09.440Z"
+      "createdAt": "2026-11-22T17:47:21.275Z"
     }
   ],
   "chats": [
@@ -809,5 +831,62 @@
       "body": "hiii😍",
       "createdAt": "2026-11-22T11:33:38.298Z"
     }
-  ]
+  ],
+  "commentVotes": [
+    {
+      "userId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "commentId": "38fff10d-388b-441e-b545-4ce01e314a78",
+      "value": 1
+    },
+    {
+      "userId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "commentId": "38fff10d-388b-441e-b545-4ce01e314a78",
+      "value": 1
+    }
+  ],
+  "notifications": [
+    {
+      "id": "31274f4b-811e-481d-9157-1a2e0d92e2f0",
+      "userId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "type": "follow",
+      "actorId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "postId": null,
+      "commentId": null,
+      "createdAt": "2026-11-22T17:44:45.805Z",
+      "readAt": "2026-11-22T17:46:57.403Z"
+    },
+    {
+      "id": "d8984bd8-3648-4d94-8b97-592edf69cca9",
+      "userId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "type": "post_comment",
+      "actorId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "postId": "0bff03cf-d7ba-415a-b5a8-8692b81af1bc",
+      "commentId": "38fff10d-388b-441e-b545-4ce01e314a78",
+      "createdAt": "2026-11-22T17:46:12.182Z",
+      "readAt": "2026-11-22T17:46:57.403Z"
+    },
+    {
+      "id": "1b168051-7892-475f-a896-21bbeba57f45",
+      "userId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "type": "comment_reply",
+      "actorId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "postId": "0bff03cf-d7ba-415a-b5a8-8692b81af1bc",
+      "commentId": "7ac609fa-454f-45b2-a63e-0f76df1c58a3",
+      "createdAt": "2026-11-22T17:47:12.625Z",
+      "readAt": "2026-11-22T17:47:32.076Z"
+    },
+    {
+      "id": "562cf2f4-a229-440e-b475-ce2b5abc5262",
+      "userId": "ba586a04-1086-4e5e-91d2-663bb15dcc55",
+      "type": "follow",
+      "actorId": "727c62ef-8fb6-40d0-9a38-460a689fb995",
+      "postId": null,
+      "commentId": null,
+      "createdAt": "2026-11-22T17:47:21.275Z",
+      "readAt": "2026-11-22T17:47:32.076Z"
+    }
+  ],
+  "saves": [],
+  "hides": [],
+  "reports": []
 }

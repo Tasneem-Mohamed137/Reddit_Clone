@@ -5,3 +5,5 @@ export { commentRepo } from './commentRepo.js';
 export { voteRepo } from './voteRepo.js';
 export { followRepo } from './followRepo.js';
 export { chatRepo } from './chatRepo.js';
+export { notificationRepo } from './notificationRepo.js';
+export { userPostRepo } from './userPostRepo.js';

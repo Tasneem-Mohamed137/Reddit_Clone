@@ -18,6 +18,7 @@ import { useCommunity } from '../hooks/useCommunity';
 import { useMediaUpload } from '../hooks/useMediaUpload';
 import { useRequireAuth } from '../hooks/useRequireAuth';
 import { formatCount, hostOf, postPath, timeAgo } from '../utils/format';
+import { CommunityHover, UserHover } from '../components/people/HoverCards';
 
 const pill = 'flex h-8 items-center gap-1.5 rounded-full bg-input px-3 text-xs font-medium hover:bg-line';
 
@@ -86,11 +87,19 @@ export default function PostPage() {
           </Link>
           <Avatar name={post.community.name} src={post.community.iconUrl} size={28} />
           <div className="leading-tight">
-            <Link to={`/r/${post.community.name}`} className="font-medium text-ink hover:underline">r/{post.community.name}</Link>
+            <CommunityHover name={post.community.name}>
+              <Link to={`/r/${post.community.name}`} className="font-medium text-ink hover:underline">r/{post.community.name}</Link>
+            </CommunityHover>
             <span> • {timeAgo(post.createdAt)}</span>
             {post.edited && <span> • edited</span>}
             <div>
-              {post.author ? <Link to={`/user/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link> : '[deleted]'}
+             {post.author ? (
+                <UserHover username={post.author.username}>
+                  <Link to={`/user/${post.author.username}`} className="hover:underline">u/{post.author.username}</Link>
+                </UserHover>
+              ) : (
+                '[deleted]'
+              )}
             </div>
           </div>
           <div className="ml-auto">

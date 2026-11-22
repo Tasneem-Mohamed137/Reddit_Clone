@@ -15,6 +15,7 @@ export const env = {
   jwtSecret: required('JWT_SECRET'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   dbDriver: process.env.DB_DRIVER ?? 'mock',
+  authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 20), // register/login attempts per minute per IP
   ai: {
     // Lower-cased and trimmed, so "Gemini " in .env still works.
     provider: text('AI_PROVIDER', 'mock').toLowerCase() || 'mock',

@@ -6,11 +6,19 @@ import { useChat } from '../../context/ChatContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { useUnreadNotifications } from '../../hooks/useNotifications';
 import SearchBar from '../search/SearchBar';
 import Avatar from '../ui/Avatar';
 import { Logo } from '../ui/Logo';
 
 const menuItem = 'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-hover';
+
+const Badge = ({ count }) =>
+  count > 0 && (
+    <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] font-bold leading-4 text-white">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
 
 function UserMenu({ user }) {
   const { logout } = useAuth();
@@ -62,13 +70,13 @@ function UserMenu({ user }) {
 export default function Navbar({ onToggleSidebar }) {
   const { user, isLoading, openAuth, guardLink } = useAuth();
   const { togglePanel, unreadTotal } = useChat();
+  const { data: unreadNotifications = 0 } = useUnreadNotifications();
   const { theme, toggleTheme } = useTheme();
-  const toast = useToast();
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-line bg-app px-3 sm:px-4">
       <div className="flex items-center gap-2">
-        <button onClick={onToggleSidebar} className="flex h-10 w-10 items-center justify-center rounded-full bg-input hover:bg-hover lg:hidden">
+        <button onClick={onToggleSidebar} className="flex h-10 w-10 items-center justify-center rounded-full bg-input hover:bg-hover lg:hidden" aria-label="Toggle sidebar">
           <Menu size={20} />
         </button>
         <Link to="/" aria-label="Reddit home">
@@ -83,19 +91,16 @@ export default function Navbar({ onToggleSidebar }) {
       <div className="flex items-center gap-1">
         <button onClick={togglePanel} className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-hover" aria-label="Chats">
           <MessageCircle size={20} />
-          {unreadTotal > 0 && (
-            <span className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] font-bold leading-4 text-white">
-              {unreadTotal > 9 ? '9+' : unreadTotal}
-            </span>
-          )}
+          <Badge count={unreadTotal} />
         </button>
         <Link to="/submit" onClick={guardLink} className="flex h-10 items-center gap-1.5 rounded-full px-3 hover:bg-hover" aria-label="Create post">
           <Plus size={22} />
           <span className="hidden text-sm font-medium md:inline">Create</span>
         </Link>
-        <button onClick={() => toast('Notifications are coming soon')} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-hover" aria-label="Notifications">
+        <Link to="/notifications" onClick={guardLink} className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-hover" aria-label="Notifications">
           <Bell size={20} />
-        </button>
+          <Badge count={unreadNotifications} />
+        </Link>
 
         {isLoading ? (
           <div className="skeleton h-8 w-8 rounded-full" />

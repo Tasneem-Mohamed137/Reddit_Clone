@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { communityRepo, followRepo, userRepo } from '../repositories/index.js';
 import { AppError } from '../utils/AppError.js';
 import { toPublicUser } from './auth.service.js';
+import { notificationService } from './notification.service.js';
 
 export const suggestionsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(30).default(8),
@@ -19,10 +20,13 @@ const followState = async (viewerId, targetId) => ({
 });
 
 export const socialService = {
-  async follow(viewerId, username) {
+ async follow(viewerId, username) {
     const target = await findUserOrThrow(username);
     if (target.id === viewerId) throw AppError.badRequest('You cannot follow yourself', 'CANNOT_FOLLOW_SELF');
+    const alreadyFollowing = await followRepo.isFollowing(viewerId, target.id);
     await followRepo.follow(viewerId, target.id); // idempotent
+    // Only the first follow notifies, so pressing Follow repeatedly cannot spam someone.
+    if (!alreadyFollowing) await notificationService.notify({ userId: target.id, type: 'follow', actorId: viewerId });
     return followState(viewerId, target.id);
   },
 

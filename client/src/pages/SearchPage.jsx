@@ -1,13 +1,18 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
+import PostList from '../components/feed/PostList';
 import Avatar from '../components/ui/Avatar';
 import { formatCount } from '../utils/format';
 
 const TABS = [
+  { id: 'posts', label: 'Posts' },
   { id: 'communities', label: 'Communities' },
   { id: 'users', label: 'People' },
 ];
+
+// Search results are not sorted by the feed controls, so the list gets fixed ones.
+const FIXED_CONTROLS = { sort: 'new', range: 'all', view: 'card' };
 
 function CommunityRow({ c }) {
   return (
@@ -37,12 +42,12 @@ function UserRow({ u }) {
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
-  const type = params.get('type') ?? 'communities';
+  const type = params.get('type') ?? 'posts';
 
   const results = useQuery({
     queryKey: ['search-page', type, q],
     queryFn: async () => (await api.get('/search', { params: { q, type, limit: 50 } })).data.items,
-    enabled: q.length > 0,
+    enabled: q.length > 0 && type !== 'posts', // posts go through PostList so votes and menus keep working
   });
   // Without a query this page doubles as "Explore": the biggest communities.
   const explore = useQuery({
@@ -63,7 +68,7 @@ export default function SearchPage() {
 
   return (
     <>
-      <h1 className="mb-2 text-xl font-semibold">Results for "{q}"</h1>
+      <h1 className="mb-2 text-xl font-semibold">Results for &quot;{q}&quot;</h1>
       <div className="mb-2 flex gap-1">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setParams({ q, type: t.id })} className={`h-9 rounded-full px-4 text-sm font-medium ${type === t.id ? 'bg-hover' : 'text-muted hover:bg-hover'}`}>
@@ -71,9 +76,16 @@ export default function SearchPage() {
           </button>
         ))}
       </div>
-      {results.isLoading && <div className="skeleton h-24" />}
-      {results.data?.length === 0 && <p className="py-16 text-center text-muted">No results found.</p>}
-      {results.data?.map((item) => (type === 'users' ? <UserRow key={item.id} u={item} /> : <CommunityRow key={item.id} c={item} />))}
+
+      {type === 'posts' ? (
+        <PostList key={q} path="/search" controls={FIXED_CONTROLS} params={{ q, type: 'posts', limit: 50 }} empty="No posts found." />
+      ) : (
+        <>
+          {results.isLoading && <div className="skeleton h-24" />}
+          {results.data?.length === 0 && <p className="py-16 text-center text-muted">No results found.</p>}
+          {results.data?.map((item) => (type === 'users' ? <UserRow key={item.id} u={item} /> : <CommunityRow key={item.id} c={item} />))}
+        </>
+      )}
     </>
   );
 }

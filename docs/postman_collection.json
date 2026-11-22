@@ -419,6 +419,45 @@
           }
         },
         {
+          "name": "PATCH /communities/{name}",
+          "request": {
+            "method": "PATCH",
+            "description": "Edit description, icon, banner and rules (moderators only)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"New description\",\n  \"iconUrl\": null,\n  \"rules\": [\n    {\n      \"title\": \"Be kind\",\n      \"description\": \"No harassment.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "POST /communities/{name}/membership",
           "request": {
             "method": "POST",
@@ -591,7 +630,7 @@
           "name": "PATCH /posts/{id}",
           "request": {
             "method": "PATCH",
-            "description": "Edit post body and/or media (author only; link posts: body only)",
+            "description": "Edit post body (markdown) and/or media (author only)",
             "header": [
               {
                 "key": "Content-Type",
@@ -700,7 +739,7 @@
           "name": "GET /feed",
           "request": {
             "method": "GET",
-            "description": "Posts from joined communities (Popular when logged out or nothing joined)",
+            "description": "Following: posts from joined communities and followed people (Popular when logged out or nothing joined/followed)",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/feed",
@@ -759,6 +798,46 @@
               ],
               "path": [
                 "posts",
+                ":id",
+                "vote"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT /comments/{id}/vote",
+          "request": {
+            "method": "PUT",
+            "description": "Set my vote on a comment (+1, -1, 0). Atomic and idempotent, same design as post votes.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comments/:id/vote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comments",
                 ":id",
                 "vote"
               ],
@@ -1316,13 +1395,351 @@
       ]
     },
     {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "GET /notifications",
+          "request": {
+            "method": "GET",
+            "description": "My notifications (comments on my posts, replies to my comments, new followers), newest first",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /notifications/unread-count",
+          "request": {
+            "method": "GET",
+            "description": "Unread counter for the bell",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "unread-count"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "POST /notifications/read-all",
+          "request": {
+            "method": "POST",
+            "description": "Mark every notification as read",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ],
+              "variable": [],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Post actions",
+      "item": [
+        {
+          "name": "PUT /posts/{id}/save",
+          "request": {
+            "method": "PUT",
+            "description": "Save a post (idempotent)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/save",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "save"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "DELETE /posts/{id}/save",
+          "request": {
+            "method": "DELETE",
+            "description": "Unsave a post",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/save",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "save"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "PUT /posts/{id}/hide",
+          "request": {
+            "method": "PUT",
+            "description": "Hide a post from my listings (idempotent)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/hide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "hide"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "DELETE /posts/{id}/hide",
+          "request": {
+            "method": "DELETE",
+            "description": "Unhide a post",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/hide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "hide"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "POST /posts/{id}/report",
+          "request": {
+            "method": "POST",
+            "description": "Report a post to the moderators (once per user)",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "report"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"spam\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /users/me/saved",
+          "request": {
+            "method": "GET",
+            "description": "My saved posts (cursor pagination)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/saved",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "saved"
+              ],
+              "variable": [],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "range",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Moderation",
+      "item": [
+        {
+          "name": "PUT /posts/{id}/pin",
+          "request": {
+            "method": "PUT",
+            "description": "Pin a post to the top of its community (moderators, max 2)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "pin"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "DELETE /posts/{id}/pin",
+          "request": {
+            "method": "DELETE",
+            "description": "Unpin a post (moderators)",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/:id/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                ":id",
+                "pin"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "<id>"
+                }
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "GET /communities/{name}/reports",
+          "request": {
+            "method": "GET",
+            "description": "Moderator queue: reported posts of the community",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/communities/:name/reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "communities",
+                ":name",
+                "reports"
+              ],
+              "variable": [
+                {
+                  "key": "name",
+                  "value": "<name>"
+                }
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Search",
       "item": [
         {
           "name": "GET /search",
           "request": {
             "method": "GET",
-            "description": "Search communities or users",
+            "description": "Search communities, users or posts",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/search",

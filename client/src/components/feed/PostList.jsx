@@ -1,12 +1,17 @@
 import { useInfinitePosts } from '../../hooks/useInfinitePosts';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import { useFeedShortcuts } from '../../hooks/useFeedShortcuts';
 import PostCard from './PostCard';
 import PostSkeleton from './PostSkeleton';
 
-export default function PostList({ path, controls, canModerate = false, showJoin = true, empty = 'Nothing here yet.' }) {
+export default function PostList({ path, controls, params, canModerate = false, showJoin = true, empty = 'Nothing here yet.' }) {
   const { sort, range, view } = controls;
-  const query = useInfinitePosts(path, { sort, range });
+  const query = useInfinitePosts(path, { sort, range, params });
   const sentinel = useInfiniteScroll(query.fetchNextPage, Boolean(query.hasNextPage) && !query.isFetchingNextPage);
+
+  // Dedupe by id: "hot" ordering can shift slightly between pages while time passes.
+  const posts = query.data ? [...new Map(query.data.pages.flatMap((page) => page.items).map((p) => [p.id, p])).values()] : [];
+  const activeId = useFeedShortcuts(posts);
 
   if (query.isLoading) return Array.from({ length: 4 }, (_, i) => <PostSkeleton key={i} />);
 
@@ -21,19 +26,16 @@ export default function PostList({ path, controls, canModerate = false, showJoin
     );
   }
 
-  // Dedupe by id: "hot" ordering can shift slightly between pages while time passes.
-  const posts = [...new Map(query.data.pages.flatMap((page) => page.items).map((p) => [p.id, p])).values()];
-
   if (posts.length === 0) return <p className="py-16 text-center text-muted">{empty}</p>;
 
   return (
     <div>
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} compact={view === 'compact'} canModerate={canModerate} showJoin={showJoin} />
+        <PostCard key={post.id} post={post} compact={view === 'compact'} canModerate={canModerate} showJoin={showJoin} active={post.id === activeId} />
       ))}
       <div ref={sentinel} />
       {query.isFetchingNextPage && <PostSkeleton />}
-      {!query.hasNextPage && <p className="py-6 text-center text-xs text-muted">You've reached the end</p>}
+      {!query.hasNextPage && <p className="py-6 text-center text-xs text-muted">You&apos;ve reached the end</p>}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { Menu } from 'lucide-react';
 import Navbar from './Navbar';
 import RightSidebar from './RightSidebar';
 import Sidebar from './Sidebar';
+// Like Reddit, these pages are full-width forms/lists without the right-hand rail.
+const NO_RAIL = ['/notifications', '/submit', '/settings/profile', '/communities/create'];
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -50,7 +52,7 @@ export default function AppLayout() {
           <main className="min-w-0 w-full max-w-[740px]">
             <Outlet context={{ railEl }} />
           </main>
-          <RightSidebar slotRef={setRailEl} />
+          {!NO_RAIL.includes(pathname) && <RightSidebar slotRef={setRailEl} />}
         </div>
       </div>
     </>

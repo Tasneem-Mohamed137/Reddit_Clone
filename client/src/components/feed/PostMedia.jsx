@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import { isVideoUrl } from '../../utils/format';
+import Lightbox from '../ui/Lightbox';
 
-// Rounded media box: images get a blurred copy of themselves behind, videos get native controls,
-// a file that fails to load shows a message, and NSFW/Spoiler posts stay covered until clicked.
+// Rounded media box: images get a blurred copy of themselves behind and open in a lightbox on click,
+// videos get native controls, a file that fails to load shows a message, and NSFW/Spoiler posts
+// stay covered until clicked.
 export default function PostMedia({ urls, height = 420, tags = [] }) {
   const [index, setIndex] = useState(0);
   const [failed, setFailed] = useState(() => new Set());
   const [revealed, setRevealed] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // index inside `images`, or null
   if (!urls?.length) return null;
 
   const current = Math.min(index, urls.length - 1); // the list can shrink after an edit
@@ -15,6 +18,7 @@ export default function PostMedia({ urls, height = 420, tags = [] }) {
   const video = isVideoUrl(url);
   const broken = failed.has(url);
   const covered = tags.length > 0 && !revealed;
+  const images = urls.filter((u) => !isVideoUrl(u)); // the lightbox shows pictures only
   const markFailed = () => setFailed((set) => new Set(set).add(url));
   const go = (delta) => () => setIndex((i) => (Math.min(i, urls.length - 1) + delta + urls.length) % urls.length);
   const arrow = 'absolute top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80';
@@ -32,7 +36,14 @@ export default function PostMedia({ urls, height = 420, tags = [] }) {
       ) : video ? (
         <video key={url} src={url} controls playsInline preload="metadata" onError={markFailed} className="relative h-full w-full object-contain" />
       ) : (
-        <img key={url} src={url} alt="" onError={markFailed} className="relative h-full w-full object-contain" />
+        <img
+          key={url}
+          src={url}
+          alt=""
+          onError={markFailed}
+          onClick={() => setLightbox(images.indexOf(url))}
+          className="relative h-full w-full cursor-zoom-in object-contain"
+        />
       )}
 
       {urls.length > 1 && (
@@ -51,6 +62,8 @@ export default function PostMedia({ urls, height = 420, tags = [] }) {
           <span className="rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold text-white">Click to view</span>
         </button>
       )}
+
+      {lightbox !== null && <Lightbox urls={images} index={lightbox} onChange={setLightbox} onClose={() => setLightbox(null)} />}
     </div>
   );
 }

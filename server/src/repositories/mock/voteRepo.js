@@ -3,13 +3,13 @@ import { getDb, persist } from './store.js';
 /**
  * ATOMIC VOTING (mock) -> MongoDB translation
  * -------------------------------------------
- * Rule: at most ONE vote per (userId, postId); the post score is NEVER computed
- * with read-modify-write in application code, only with a delta applied atomically.
+ * Rule: at most ONE vote per (user, target); the score is NEVER computed with read-modify-write
+ * in application code, only with a delta applied atomically. Posts and comments use the same design.
  *
- * Mock: a per-post async mutex serialises every vote on the same post, so two
- * requests can never interleave between "read old vote" and "apply delta".
+ * Mock: a per-target async mutex serialises every vote on the same post/comment, so two requests
+ * can never interleave between "read old vote" and "apply delta".
  *
- * MongoDB:
+ * MongoDB (votes for posts; comment_votes works exactly the same with commentId):
  *   1. Unique index:  db.votes.createIndex({ userId: 1, postId: 1 }, { unique: true })
  *      -> two concurrent first votes by the same user cannot both insert (E11000, retry once).
  *   2. One transaction (session.withTransaction) containing:
@@ -27,49 +27,60 @@ import { getDb, persist } from './store.js';
  */
 const locks = new Map();
 
-// Chains `task` behind the previous task of the same post.
+// Chains `task` behind the previous task with the same key.
 // Order of execution == order of calls, which also makes the concurrency test deterministic.
-const withPostLock = (postId, task) => {
-  const previous = locks.get(postId) ?? Promise.resolve();
+const withLock = (key, task) => {
+  const previous = locks.get(key) ?? Promise.resolve();
   const run = previous.then(task);
   const tail = run.catch(() => {}); // a failed task must not block the queue
-  locks.set(postId, tail);
+  locks.set(key, tail);
   tail.then(() => {
-    if (locks.get(postId) === tail) locks.delete(postId);
+    if (locks.get(key) === tail) locks.delete(key);
   });
   return run;
 };
 
-export const voteRepo = {
-  setVote(userId, postId, value) {
-    return withPostLock(postId, async () => {
-      const db = getDb();
-      const post = db.posts.find((p) => p.id === postId);
-      if (!post) return null;
+const POST = { targets: 'posts', votes: 'votes', idField: 'postId' };
+const COMMENT = { targets: 'comments', votes: 'commentVotes', idField: 'commentId' };
 
-      const existing = db.votes.find((v) => v.userId === userId && v.postId === postId);
-      const delta = value - (existing?.value ?? 0);
+const castVote = ({ targets, votes, idField }, userId, id, value) =>
+  withLock(`${targets}:${id}`, async () => {
+    const db = getDb();
+    const target = db[targets].find((t) => t.id === id);
+    if (!target) return null;
 
-      if (value === 0) {
-        if (existing) db.votes = db.votes.filter((v) => v !== existing);
-      } else if (existing) {
-        existing.value = value;
-      } else {
-        db.votes.push({ userId, postId, value });
-      }
+    const existing = db[votes].find((v) => v.userId === userId && v[idField] === id);
+    const delta = value - (existing?.value ?? 0);
 
-      post.score += delta; // $inc: { score: delta }
-      persist();
-      return { score: post.score, userVote: value };
-    });
-  },
-
-  async getUserVotes(userId, postIds) {
-    const wanted = new Set(postIds);
-    const result = {};
-    for (const vote of getDb().votes) {
-      if (vote.userId === userId && wanted.has(vote.postId)) result[vote.postId] = vote.value;
+    if (value === 0) {
+      if (existing) db[votes] = db[votes].filter((v) => v !== existing);
+    } else if (existing) {
+      existing.value = value;
+    } else {
+      db[votes].push({ userId, [idField]: id, value });
     }
-    return result;
+
+    target.score += delta; // $inc: { score: delta }
+    persist();
+    return { score: target.score, userVote: value };
+  });
+
+const votesOf = ({ votes, idField }, userId, ids) => {
+  const wanted = new Set(ids);
+  const result = {};
+  for (const vote of getDb()[votes]) {
+    if (vote.userId === userId && wanted.has(vote[idField])) result[vote[idField]] = vote.value;
+  }
+  return result;
+};
+
+export const voteRepo = {
+  setVote: (userId, postId, value) => castVote(POST, userId, postId, value),
+  setCommentVote: (userId, commentId, value) => castVote(COMMENT, userId, commentId, value),
+  async getUserVotes(userId, postIds) {
+    return votesOf(POST, userId, postIds);
+  },
+  async getUserCommentVotes(userId, commentIds) {
+    return votesOf(COMMENT, userId, commentIds);
   },
 };

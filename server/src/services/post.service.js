@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { communityRepo, followRepo, postRepo, userRepo, voteRepo } from '../repositories/index.js';
+import { communityRepo, followRepo, postRepo, userPostRepo, userRepo, voteRepo } from '../repositories/index.js';
 import { AppError } from '../utils/AppError.js';
 import { mediaUrlSchema } from '../utils/mediaUrl.js';
 import { communityService, findCommunityOrThrow } from './community.service.js';
+import { mediaService } from './media.service.js';
 
 // Like Reddit's single composer: a post is a title plus any mix of text, media and a link.
 // The `type` is NOT sent by the client; it is derived from the content (see typeOf).
@@ -33,6 +34,12 @@ export const feedQuerySchema = z.object({
 const SORT_ALIASES = { best: 'hot', hot: 'hot', new: 'new', top: 'top' };
 const toRepoQuery = (q) => ({ sort: SORT_ALIASES[q.sort], range: q.range, cursor: q.cursor, limit: q.limit });
 
+// Posts the viewer hid never show up in listings.
+const listQuery = async (query, viewerId) => ({
+  ...toRepoQuery(query),
+  excludeIds: viewerId ? await userPostRepo.listHiddenIds(viewerId) : [],
+});
+
 // The type is only a label for feeds/filters; it always follows the content, so it can never disagree with it.
 const typeOf = (mediaUrls, linkUrl) => (mediaUrls.length > 0 ? 'image' : linkUrl ? 'link' : 'text');
 
@@ -42,14 +49,13 @@ export const findPostOrThrow = async (id) => {
   return post;
 };
 
-// Turns raw rows into API objects using 4 batched lookups (no N+1 queries).
+// Turns raw rows into API objects using batched lookups (no N+1 queries).
 const hydrate = async (posts, viewerId) => {
-  const communityIds = [...new Set(posts.map((p) => p.communityId))];
-  const authorIds = [...new Set(posts.map((p) => p.authorId))];
-
-  const communities = new Map((await communityRepo.findByIds(communityIds)).map((c) => [c.id, c]));
-  const authors = new Map((await userRepo.findByIds(authorIds)).map((u) => [u.id, u]));
-  const votes = viewerId ? await voteRepo.getUserVotes(viewerId, posts.map((p) => p.id)) : {};
+  const ids = posts.map((p) => p.id);
+  const communities = new Map((await communityRepo.findByIds([...new Set(posts.map((p) => p.communityId))])).map((c) => [c.id, c]));
+  const authors = new Map((await userRepo.findByIds([...new Set(posts.map((p) => p.authorId))])).map((u) => [u.id, u]));
+  const votes = viewerId ? await voteRepo.getUserVotes(viewerId, ids) : {};
+  const saved = new Set(viewerId ? await userPostRepo.savedAmong(viewerId, ids) : []);
   const joined = viewerId
     ? new Set((await communityRepo.listJoinedBy(viewerId)).map((c) => c.id))
     : new Set();
@@ -65,6 +71,7 @@ const hydrate = async (posts, viewerId) => {
       mediaUrls: post.mediaUrls,
       linkUrl: post.linkUrl,
       tags: post.tags ?? [], // posts created before tags existed have none
+      pinned: Boolean(post.pinned),
       score: post.score,
       commentCount: post.commentCount,
       createdAt: post.createdAt,
@@ -74,6 +81,7 @@ const hydrate = async (posts, viewerId) => {
         ? { username: author.username, displayName: author.displayName, avatarUrl: author.avatarUrl }
         : null,
       userVote: votes[post.id] ?? 0,
+      isSaved: saved.has(post.id),
       isJoined: joined.has(post.communityId),
     };
   });
@@ -110,8 +118,10 @@ export const postService = {
     if (post.authorId !== userId) throw AppError.forbidden('Only the author can edit this post');
 
     const mediaUrls = patch.mediaUrls ?? post.mediaUrls;
-    const changes = { ...patch, type: typeOf(mediaUrls, post.linkUrl) };
-    return (await hydrate([await postRepo.update(id, changes)], userId))[0];
+    const updated = await postRepo.update(id, { ...patch, type: typeOf(mediaUrls, post.linkUrl) });
+    // Files the author removed from the post are deleted from disk.
+    await mediaService.removeIfUnused(post.mediaUrls.filter((url) => !mediaUrls.includes(url)));
+    return (await hydrate([updated], userId))[0];
   },
 
   async remove(id, userId) {
@@ -119,21 +129,41 @@ export const postService = {
     const allowed = post.authorId === userId || (await communityService.isModerator(post.communityId, userId));
     if (!allowed) throw AppError.forbidden('Only the author or a moderator can delete this post');
     await postRepo.deleteCascade(id);
+    await mediaService.removeIfUnused(post.mediaUrls);
   },
 
+  // Pinned posts lead the FIRST page only; later pages continue with the normal order.
   async listByCommunity(name, query, viewerId) {
     const community = await findCommunityOrThrow(name);
-    return toPage(await postRepo.list({ ...toRepoQuery(query), communityIds: [community.id] }), viewerId);
+    const base = await listQuery(query, viewerId);
+    const pinned = await postRepo.listPinned(community.id);
+    const page = await postRepo.list({
+      ...base,
+      communityIds: [community.id],
+      excludeIds: [...base.excludeIds, ...pinned.map((p) => p.id)],
+    });
+    const visiblePinned = pinned.filter((p) => !base.excludeIds.includes(p.id));
+    const items = query.cursor ? page.items : [...visiblePinned, ...page.items];
+    return toPage({ items, nextCursor: page.nextCursor }, viewerId);
   },
 
   async listByUser(username, query, viewerId) {
     const user = await userRepo.findByUsername(username);
     if (!user) throw AppError.notFound('User not found');
-    return toPage(await postRepo.list({ ...toRepoQuery(query), authorId: user.id }), viewerId);
+    return toPage(await postRepo.list({ ...(await listQuery(query, viewerId)), authorId: user.id }), viewerId);
+  },
+
+  async listSaved(userId, query) {
+    const ids = await userPostRepo.listSavedIds(userId);
+    return toPage(await postRepo.list({ ...toRepoQuery(query), ids }), userId);
+  },
+
+  async search(q, limit, viewerId) {
+    return { items: await hydrate(await postRepo.search(q, limit), viewerId) };
   },
 
   async popular(query, viewerId) {
-    return toPage(await postRepo.list(toRepoQuery(query)), viewerId);
+    return toPage(await postRepo.list(await listQuery(query, viewerId)), viewerId);
   },
 
   // "Following": posts from joined communities OR from people I follow.
@@ -146,7 +176,7 @@ export const postService = {
     ]);
     if (joined.length === 0 && followingIds.length === 0) return this.popular(query, viewerId);
     return toPage(
-      await postRepo.list({ ...toRepoQuery(query), communityIds: joined.map((c) => c.id), orAuthorIds: followingIds }),
+      await postRepo.list({ ...(await listQuery(query, viewerId)), communityIds: joined.map((c) => c.id), orAuthorIds: followingIds }),
       viewerId,
     );
   },

@@ -59,10 +59,17 @@ export const commentRepo = {
   async hasChildren(id) {
     return getDb().comments.some((c) => c.parentId === id);
   },
-
+    // Total score of the user's comments (counts towards karma).
+  async sumScoreByAuthor(userId) {
+    return getDb()
+      .comments.filter((c) => c.authorId === userId)
+      .reduce((sum, c) => sum + c.score, 0);
+  },
+  
   async remove(id) {
     const db = getDb();
     db.comments = db.comments.filter((c) => c.id !== id);
+    db.commentVotes = db.commentVotes.filter((v) => v.commentId !== id);
     persist();
   },
 };

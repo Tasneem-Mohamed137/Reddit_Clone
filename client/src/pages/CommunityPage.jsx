@@ -25,6 +25,25 @@ function AboutCard({ community }) {
         <div className="text-base font-semibold">{formatCount(community.memberCount)}</div>
         <div className="text-xs text-muted">Members</div>
       </div>
+       {community.rules?.length > 0 && (
+        <div className="mt-3 border-t border-line pt-3">
+          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+            Rules
+          </h3>
+          <ol className="list-decimal pl-5 text-sm">
+            {community.rules.map((rule, i) => (
+              <li key={i} className="py-1">
+                <span className="rtl-aware font-medium">{rule.title}</span>
+                {rule.description && (
+                  <p className="rtl-aware text-xs text-muted">
+                    {rule.description}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       <div className="mt-3 border-t border-line pt-3">
         <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">Moderators</h3>
         {community.moderators.map((m) => (
@@ -81,6 +100,11 @@ export default function CommunityPage() {
           <h1 className="text-2xl font-bold">r/{community.name}</h1>
           {community.isModerator && <span className="rounded-md bg-brand px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">Mod</span>}
         </div>
+       {community.isModerator && (
+          <Link to={`/r/${community.name}/edit`} className="flex h-9 items-center rounded-full border border-line px-4 text-sm font-semibold hover:bg-hover">
+            Edit
+          </Link>
+        )}
         <Link to={`/submit?community=${community.name}`} onClick={guardLink} className="flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-semibold hover:bg-hover">
           <Plus size={18} /> Create Post
         </Link>

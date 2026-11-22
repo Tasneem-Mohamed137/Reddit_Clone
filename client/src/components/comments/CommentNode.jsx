@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowBigDown, ArrowBigUp, MessageSquare, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCommentVote } from '../../hooks/useCommentVote';
 import { useRequireAuth } from '../../hooks/useRequireAuth';
 import { countDescendants } from '../../utils/comments';
-import { timeAgo } from '../../utils/format';
+import { formatCount, timeAgo } from '../../utils/format';
+import { UserHover } from '../people/HoverCards';
 import Avatar from '../ui/Avatar';
-import CommentForm from './CommentForm';
 import Markdown from '../ui/Markdown';
+import CommentForm from './CommentForm';
 
 const MAX_DEPTH = 8; // replies below this depth are behind a "Load more replies" button
 const actionBtn = 'flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium text-muted hover:bg-input';
@@ -15,6 +17,7 @@ const actionBtn = 'flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-
 export default function CommentNode({ comment, depth, actions, canModerate }) {
   const { user } = useAuth();
   const requireAuth = useRequireAuth();
+  const vote = useCommentVote();
   const [collapsed, setCollapsed] = useState(false);
   const [replying, setReplying] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -24,6 +27,8 @@ export default function CommentNode({ comment, depth, actions, canModerate }) {
   const isAuthor = Boolean(user && author?.username === user.username);
   const canDelete = isAuthor || canModerate;
   const deepHidden = depth >= MAX_DEPTH && !showDeep && comment.children.length > 0;
+  const up = comment.userVote === 1;
+  const down = comment.userVote === -1;
 
   if (collapsed) {
     return (
@@ -53,7 +58,9 @@ export default function CommentNode({ comment, depth, actions, canModerate }) {
       <div className="min-w-0 flex-1 pb-3">
         <div className="flex items-center gap-1.5 text-xs text-muted">
           {author ? (
-            <Link to={`/user/${author.username}`} className="font-medium text-ink hover:underline">u/{author.username}</Link>
+            <UserHover username={author.username}>
+              <Link to={`/user/${author.username}`} className="font-medium text-ink hover:underline">u/{author.username}</Link>
+            </UserHover>
           ) : (
             <span>[deleted]</span>
           )}
@@ -74,16 +81,23 @@ export default function CommentNode({ comment, depth, actions, canModerate }) {
               }}
             />
           </div>
+        ) : comment.deleted ? (
+          <p className="mt-1 text-sm italic text-muted">{comment.body}</p>
         ) : (
-            comment.deleted ? (
-            <p className="mt-1 text-sm italic text-muted">{comment.body}</p>
-          ) : (
-            <Markdown className="mt-1">{comment.body}</Markdown>
-          )
+          <Markdown className="mt-1">{comment.body}</Markdown>
         )}
 
         {!comment.deleted && !editing && (
           <div className="-ml-2 mt-1 flex items-center">
+            <button onClick={() => vote(comment.id, up ? 0 : 1)} className={`${actionBtn} ${up ? '!text-brand' : ''}`} aria-label="Upvote">
+              <ArrowBigUp size={18} fill={up ? 'currentColor' : 'none'} />
+            </button>
+            <span className={`min-w-4 text-center text-xs font-semibold ${up ? 'text-brand' : down ? 'text-down' : ''}`}>
+              {formatCount(comment.score)}
+            </span>
+            <button onClick={() => vote(comment.id, down ? 0 : -1)} className={`${actionBtn} ${down ? '!text-down' : ''}`} aria-label="Downvote">
+              <ArrowBigDown size={18} fill={down ? 'currentColor' : 'none'} />
+            </button>
             <button onClick={() => requireAuth() && setReplying((r) => !r)} className={actionBtn}>
               <MessageSquare size={14} /> Reply
             </button>

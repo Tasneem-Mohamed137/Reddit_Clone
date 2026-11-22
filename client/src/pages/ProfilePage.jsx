@@ -76,6 +76,16 @@ function CommentsTab({ username }) {
   return <CommentRows username={username} items={comments.data ?? []} />;
 }
 
+function SavedTab() {
+  const controls = useFeedControls('new');
+  return (
+    <>
+      <FeedControls controls={controls} />
+      <PostList path="/users/me/saved" controls={controls} empty="You have not saved any posts yet." />
+    </>
+  );
+}
+
 export default function ProfilePage() {
   const { username } = useParams();
   const { user } = useAuth();
@@ -136,7 +146,7 @@ export default function ProfilePage() {
       </section>
 
       <div className="my-3 flex gap-1">
-        {TABS.map((t) => (
+        {[...TABS, ...(isMe ? [{ id: 'saved', label: 'Saved' }] : [])].map((t) => (
           <button key={t.id} onClick={() => selectTab(t.id)} className={`h-9 rounded-full px-4 text-sm font-medium ${tab === t.id ? 'bg-hover' : 'text-muted hover:bg-hover'}`}>
             {t.label}
           </button>
@@ -146,6 +156,7 @@ export default function ProfilePage() {
       {tab === 'overview' && <Overview username={profile.username} onSeeAll={selectTab} />}
       {tab === 'posts' && <PostsTab username={profile.username} />}
       {tab === 'comments' && <CommentsTab username={profile.username} />}
+      {tab === 'saved' && isMe && <SavedTab />}
     </>
   );
 }
