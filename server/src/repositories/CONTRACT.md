@@ -42,13 +42,15 @@ Records use string `id`s and ISO-8601 date strings. Return `null` when not found
 
 ## voteRepo
 - setVote(userId, postId, value in {1,-1,0}) -> { score, userVote } | null (post missing)
-    MUST be atomic: see the MongoDB translation in mock/voteRepo.js.
+    MUST be atomic: transaction + unique index, see mongo/voteRepo.js.
 - getUserVotes(userId, postIds) -> { [postId]: value }
 
-## Mongo migration
-1. Create repositories/mongo/*.js with the same exports, then export them from repositories/mongo/index.js.
-2. Unique indexes: users.email, users.username, communities.name, community_members(communityId,userId), votes(userId,postId).
-3. Set DB_DRIVER=mongo.
+## Storage: MongoDB (the only driver)
+- Implementation: repositories/mongo/*.js, schemas + indexes in mongo/models.js, connection in mongo/connection.js.
+- Configure MONGODB_URI (+ optional MONGODB_DB_NAME) in server/.env. The server needs a replica set (Atlas) for transactions.
+- Unique indexes: users.email, users.username, communities.name (case-insensitive), community_members(communityId,userId),
+  votes(userId,postId), comment_votes(userId,commentId), follows(followerId,followeeId), saves/hides/reports(userId,postId), chats.memberKey.
+- The old in-memory/JSON mock driver was removed; every service reads and writes MongoDB.
 
 
 ## followRepo

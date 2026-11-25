@@ -1,7 +1,7 @@
 # Reddit Clone
 
 A faithful (dark-mode first) clone of the new reddit.com for a Web Development course project.
-React 18 + Vite + Tailwind on the front, Node + Express REST API on the back, swappable database layer.
+React 18 + Vite + Tailwind on the front, Node + Express REST API on the back, MongoDB (Atlas, through Mongoose) behind a repository layer.
 
 ## Features
 - **Accounts:** register with live username check, login/logout (JWT in an httpOnly cookie), profile edit with avatar upload
@@ -18,12 +18,12 @@ React 18 + Vite + Tailwind on the front, Node + Express REST API on the back, sw
 - **UI:** dark/light theme, RTL-aware titles, skeleton loaders, toasts, responsive, hover-peek sidebar
 
 ## Quick start
-Requirements: Node 20+.
+Requirements: Node 20+ and a MongoDB Atlas cluster (free M0 is enough; it must be a replica set, which Atlas always is).
 
 ```bash
 # 1) API
 cd server
-cp .env.example .env        # then edit it (see "Environment variables")
+cp .env.example .env        # then edit it: set MONGODB_URI (see "Environment variables")
 npm install
 npm run seed                # demo data. Login: tasneem / Password123!
 npm run dev                 # http://localhost:4000  (docs: /api-docs)
@@ -43,7 +43,8 @@ Vite proxies `/api`, `/uploads` and `/ws` to the API, so the browser only talks 
 | `CLIENT_ORIGIN` | `http://localhost:5173` | allowed CORS / WebSocket origin |
 | `JWT_SECRET` | required | long random string |
 | `JWT_EXPIRES_IN` | `7d` | token lifetime |
-| `DB_DRIVER` | `mock` | `mock` (JSON file) or `mongo` |
+| `MONGODB_URI` | required | Atlas connection string (Atlas -> Connect -> Drivers) |
+| `MONGODB_DB_NAME` | `reddit_clone` | database name inside the cluster |
 | `AI_PROVIDER` | `mock` | `mock`, `gemini`, `openai`, `anthropic` |
 | `AI_API_KEY` | empty | provider key (server only) |
 | `AI_MODEL` | provider default | e.g. `gemini-flash-latest` |
@@ -52,8 +53,9 @@ Vite proxies `/api`, `/uploads` and `/ws` to the API, so the browser only talks 
 | Command | What it does |
 |---|---|
 | `npm run dev` | API with auto-restart (watches `src/` only) |
-| `npm run seed` | resets `data.json` and loads demo data |
-| `npm run test:votes` | fires 100 concurrent votes and asserts the final score |
+| `npm run seed` | empties every collection (indexes are kept) and loads demo data |
+| `npm test` | API + database tests; each test file uses its own temporary database, dropped at the end |
+| `npm run test:votes` | fires 100 concurrent votes at MongoDB and asserts score = sum of votes, no duplicates |
 | `npm run postman` | writes `docs/postman_collection.json` from the OpenAPI spec |
 
 ## Folder structure
@@ -63,8 +65,13 @@ server/src
   controllers/   HTTP <-> service translation only
   services/      all business rules (permissions, derived data, hydration)
   repositories/  the ONLY layer that touches storage
-    index.js       DB_DRIVER switch        CONTRACT.md  interface to implement
-    mock/          JSON-file implementation (+ per-post mutex for votes)
+    index.js       exports the Mongo repositories    CONTRACT.md  the interface services rely on
+    mongo/         MongoDB implementation
+      connection.js  connect once, check replica set, build indexes, withTransaction()
+      models.js      Mongoose schemas + every index (the ER diagram in code)
+      record.js      _id -> id, Date -> ISO string (the contract shape)
+      pagination.js  keyset cursor
+      *Repo.js       one file per repository
   middleware/    auth, validate, rateLimit, upload, errorHandler
   realtime/      WebSocket hub (chat push)
   docs/          OpenAPI spec (served at /api-docs)
@@ -77,13 +84,15 @@ Request flow: `route -> controller -> service -> repository`. Errors are thrown 
 ## Voting and concurrency
 - Votes are a separate collection with a **unique key (userId, postId)**.
 - `PUT /posts/:id/vote { value: 1 | -1 | 0 }` is idempotent. The score changes by `delta = newValue - oldValue`, applied atomically (`$inc` / `SET score = score + delta`), never read-modify-write in application code.
-- The mock repository serialises votes with a per-post async queue. `repositories/mock/voteRepo.js` documents the exact MongoDB translation: unique compound index + `findOneAndUpdate` (upsert, `returnDocument: 'before'`) + `$inc` inside one transaction.
-- `npm run test:votes` proves it: 100 concurrent mixed votes from 6 users, final score must equal the sum of each user's last vote.
+- `repositories/mongo/voteRepo.js`: inside ONE transaction, upsert the vote row and get the previous one back, compute the delta, then update `score` (and the stored `hotScore`) in one atomic update. Concurrent votes on the same post cause a write conflict and MongoDB retries the loser with fresh data.
+- `npm run test:votes` proves it: 100 concurrent mixed votes from 6 users, no duplicate vote rows, and the final score equals the sum of the stored votes.
 
-## Swapping the mock DB for MongoDB
-1. Create `server/src/repositories/mongo/` with the same exports as `mock/index.js` (`userRepo`, `communityRepo`, `postRepo`, `commentRepo`, `voteRepo`, `followRepo`, `chatRepo`). `repositories/CONTRACT.md` lists every function, its return shape and the indexes.
-2. Create the unique indexes from `docs/er-diagram.md`.
-3. Set `DB_DRIVER=mongo` (plus your connection string). No service, controller or route changes.
+## Database (MongoDB)
+- **Collections:** `users`, `communities` (rules embedded), `community_members`, `posts`, `comments`, `votes`, `comment_votes`, `follows`, `chats` (members embedded with their `readAt`), `messages`, `notifications`, `saves`, `hides`, `reports`. Diagram and indexes: `docs/er-diagram.md`.
+- **Ids** are strings (an ObjectId in hex), so the API contract stays the same and an unknown id is a 404, never a 500. **Dates** are stored as `Date` and returned to services as ISO strings.
+- **Integrity:** unique indexes stop duplicates (case-insensitive email/username/community name, one membership, one vote, one follow/save/hide/report, one chat per member set). Transactions keep multi-write operations all-or-nothing: voting, deleting a post with its comments/votes, `commentCount`, `memberCount`, sending a message.
+- **Feeds** use compound indexes `(filter, sortKey DESC, _id DESC)` and keyset pagination, so a page never repeats or skips posts. The "hot" score is stored (`hotScore`) so it can be sorted by an index.
+- Indexes are created automatically when the server starts. Transactions need a replica set: the server refuses to start on a standalone `mongod` and says why.
 
 ## Chat (WebSocket)
 Writes go over REST (`POST /chats/:id/messages`, validated and rate limited). The server then pushes `{ type: "chat.message", chatId, message }` to every member over `ws://host/ws`. The socket authenticates with the same httpOnly cookie and checks the `Origin` header. The client reconnects with exponential backoff and refetches after a reconnect.
@@ -97,11 +106,11 @@ Writes go over REST (`POST /chats/:id/messages`, validated and rate limited). Th
 
 ## Deployment (one server, no CORS)
 1. `cd client && npm run build` creates `client/dist`.
-2. On the host, run the API with `NODE_ENV=production`, `CLIENT_ORIGIN=https://your-domain`, a real `JWT_SECRET` and the AI variables. It serves the API, uploads, WebSocket **and** the built React app from one origin, so the cookie works without cross-site settings.
+2. On the host, run the API with `NODE_ENV=production`, `CLIENT_ORIGIN=https://your-domain`, a real `JWT_SECRET`, `MONGODB_URI` and the AI variables. It serves the API, uploads, WebSocket **and** the built React app from one origin, so the cookie works without cross-site settings.
 3. Start command: `cd server && npm install && npm start`. Hosts such as Render or Railway work. Use HTTPS (the cookie becomes `secure`).
-4. Free hosts have ephemeral disks: `data.json` and `uploads/` are lost on redeploy. For a lasting deployment use the Mongo driver and a cloud bucket for uploads.
+4. Free hosts have ephemeral disks: `uploads/` is lost on redeploy (the data itself is safe in MongoDB Atlas). For a lasting deployment use a cloud bucket for uploads. Allow the host's IP (or 0.0.0.0/0) in Atlas Network Access.
 
 ## Known limitations
-- Mock database and uploads live on local disk (single instance only).
+- Uploaded files live on local disk (single instance only).
 - Chat has no typing indicator or read receipts per message.
 - Uploaded files are not deleted when a post is deleted.

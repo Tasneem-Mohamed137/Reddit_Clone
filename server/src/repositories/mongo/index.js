@@ -1,3 +1,9 @@
+import { connectMongo } from './connection.js';
+
+// Top-level await: importing the repositories waits until MongoDB is connected and every index
+// exists, so the server never accepts a request it cannot store.
+await connectMongo();
+
 export { userRepo } from './userRepo.js';
 export { communityRepo } from './communityRepo.js';
 export { postRepo } from './postRepo.js';
