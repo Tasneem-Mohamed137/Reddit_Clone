@@ -1,21 +1,17 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-
 // All of this must run BEFORE the app (and therefore env.js) is imported.
-const dataFile = path.join(os.tmpdir(), `reddit-clone-test-${process.pid}-${Date.now()}.json`);
+// MONGODB_URI comes from server/.env (same cluster), but every test FILE gets its own throwaway
+// database, so tests never touch real data and test files never see each other's users.
 Object.assign(process.env, {
   NODE_ENV: 'test',
   JWT_SECRET: 'test-secret',
-  DB_DRIVER: 'mock',
-  DATA_FILE: dataFile, // a throwaway database, the real data.json is never touched
+  MONGODB_DB_NAME: `reddit_clone_test_${process.pid}_${Date.now()}`,
   AI_PROVIDER: 'mock',
   AI_API_KEY: '',
 });
 process.env.AUTH_RATE_LIMIT_MAX ??= '10000'; // a test file can lower it before importing this helper
 
 const { app } = await import('../src/app.js');
-const { flush } = await import('../src/repositories/mock/store.js');
+const mongoose = (await import('mongoose')).default;
 
 const server = await new Promise((resolve) => {
   const listening = app.listen(0, () => resolve(listening));
@@ -50,6 +46,6 @@ export const newUser = async (prefix = 'user') => {
 export const closeServer = async () => {
   server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve));
-  flush(); // writes pending data and cancels the debounce timer, so nothing re-creates the file afterwards
-  fs.rmSync(dataFile, { force: true });
+  await mongoose.connection.dropDatabase(); // delete this file's throwaway test database
+  await mongoose.disconnect(); // an open connection would keep the test process alive
 };

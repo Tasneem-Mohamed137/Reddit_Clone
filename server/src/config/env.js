@@ -14,7 +14,9 @@ export const env = {
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret: required('JWT_SECRET'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
-  dbDriver: process.env.DB_DRIVER ?? 'mock',
+  // MongoDB is the only database. The URI comes from Atlas ("Connect" -> "Drivers").
+  mongoUri: required('MONGODB_URI'),
+  mongoDbName: text('MONGODB_DB_NAME', 'reddit_clone') || 'reddit_clone',
   authRateLimitMax: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 20), // register/login attempts per minute per IP
   ai: {
     // Lower-cased and trimmed, so "Gemini " in .env still works.

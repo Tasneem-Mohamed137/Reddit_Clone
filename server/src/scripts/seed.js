@@ -1,14 +1,20 @@
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { env } from '../config/env.js';
-import { resetDb, flush } from '../repositories/mock/store.js';
 import { userRepo, communityRepo, postRepo, commentRepo, voteRepo, followRepo, chatRepo } from '../repositories/index.js';
+import { disconnectMongo } from '../repositories/mongo/connection.js';
+import { allModels } from '../repositories/mongo/models.js';
 
-if (env.dbDriver !== 'mock') throw new Error('Seeding is only for DB_DRIVER=mock');
+// Safety: refuse to wipe a production database by accident.
+if (env.isProd) throw new Error('Refusing to seed (and wipe) the database while NODE_ENV=production');
 
 const hoursAgo = (h) => new Date(Date.now() - h * 3600_000).toISOString();
 const PASSWORD = 'Password123!';
 
-resetDb();
+// Importing the repositories already connected. Empty every collection but KEEP the indexes
+// (dropDatabase would delete them, and the unique rules must always be there).
+await Promise.all(allModels.map((model) => model.deleteMany({})));
+console.log(`Seeding database "${mongoose.connection.name}"...`);
 const passwordHash = await bcrypt.hash(PASSWORD, 10);
 
 const [tasneem, omar, salma] = await Promise.all(
@@ -107,5 +113,5 @@ await chatRepo.addMessage({ chatId: chat.id, senderId: omar.id, body: 'Hey! Did 
 await chatRepo.addMessage({ chatId: chat.id, senderId: tasneem.id, body: 'Almost, working on the voting tests now.' });
 await chatRepo.addMessage({ chatId: chat.id, senderId: omar.id, body: 'Nice, ping me when it is done.' });
 
-flush();
+await disconnectMongo();
 console.log(`Seeded. Log in with username "tasneem" and password "${PASSWORD}"`);
